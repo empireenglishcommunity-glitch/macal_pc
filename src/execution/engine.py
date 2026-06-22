@@ -23,6 +23,7 @@ from typing import Any
 
 from src.execution.file_operations import FileOperations, FileOpResult
 from src.security.permission_guard import PermissionGuard, PermissionResult
+from src.execution.gui_operations import GUIOperations
 
 logger = logging.getLogger(__name__)
 
@@ -87,6 +88,7 @@ class ExecutionEngine:
         self.file_ops = FileOperations(
             allowed_paths=allowed_write_paths or default_allowed
         )
+        self.gui_ops = GUIOperations()
         self.permission_guard = PermissionGuard(
             allowed_paths=allowed_write_paths or default_allowed,
             blocked_paths=blocked_paths or default_blocked,
@@ -281,6 +283,50 @@ class ExecutionEngine:
             import platform
             info = f"OS={platform.system()} {platform.version()}, Python={platform.python_version()}"
             return FileOpResult(success=True, operation="get_system_status", source="system", destination=info)
+
+        # ─── GUI Operations ───────────────────────────────────────
+        elif tool == "open_application":
+            result = await self.gui_ops.open_application(arguments.get("app_name", ""))
+            return FileOpResult(
+                success=result.success, operation="open_application",
+                source=arguments.get("app_name", ""), destination=result.details,
+                error=result.error,
+            )
+
+        elif tool == "type_text":
+            result = await self.gui_ops.type_text(
+                text=arguments.get("text", ""),
+                window_title=arguments.get("window_title", ""),
+            )
+            return FileOpResult(
+                success=result.success, operation="type_text",
+                source=arguments.get("window_title", "active window"),
+                destination=result.details, error=result.error,
+            )
+
+        elif tool == "press_keys":
+            result = await self.gui_ops.press_keys(arguments.get("keys", ""))
+            return FileOpResult(
+                success=result.success, operation="press_keys",
+                source=arguments.get("keys", ""), destination=result.details,
+                error=result.error,
+            )
+
+        elif tool == "list_windows":
+            result = await self.gui_ops.list_windows()
+            return FileOpResult(
+                success=result.success, operation="list_windows",
+                source="desktop", destination=result.details,
+                error=result.error,
+            )
+
+        elif tool == "focus_window":
+            result = await self.gui_ops.focus_window(arguments.get("window_title", ""))
+            return FileOpResult(
+                success=result.success, operation="focus_window",
+                source=arguments.get("window_title", ""),
+                destination=result.details, error=result.error,
+            )
 
         else:
             return FileOpResult(

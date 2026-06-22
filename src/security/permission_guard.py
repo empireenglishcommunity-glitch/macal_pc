@@ -42,10 +42,12 @@ class PermissionGuard:
     GREEN_ACTIONS = [
         "read_file", "list_directory", "search_files",
         "get_file_info", "check_status", "classify_file",
+        "list_windows", "focus_window", "get_system_status",
     ]
     YELLOW_ACTIONS = [
         "create_folder", "move_file", "rename_file",
         "copy_file", "write_file", "create_file",
+        "open_application", "type_text", "press_keys",
     ]
     RED_ACTIONS = [
         "delete_file", "delete_folder", "overwrite_file",

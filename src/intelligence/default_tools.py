@@ -132,6 +132,71 @@ def register_system_tools(registry: ToolRegistry) -> None:
     )
 
 
+def register_gui_tools(registry: ToolRegistry) -> None:
+    """Register GUI automation tools (Phase 3)."""
+
+    registry.register(
+        name="open_application",
+        description="Open a Windows application. Supports: notepad, calculator, explorer, chrome, edge, settings, paint, cmd, powershell, or any executable name.",
+        parameters={
+            "app_name": {
+                "type": "string",
+                "description": "Name of the application to open (e.g., 'notepad', 'chrome', 'calculator')",
+            },
+        },
+        category="gui",
+    )
+
+    registry.register(
+        name="type_text",
+        description="Type text into a window. Uses clipboard paste for reliability. Optionally specify which window to target.",
+        parameters={
+            "text": {
+                "type": "string",
+                "description": "The text to type into the window",
+            },
+            "window_title": {
+                "type": "string",
+                "description": "Part of the window title to focus (e.g., 'Notepad', 'Chrome'). Leave empty for currently active window.",
+            },
+        },
+        required=["text"],
+        category="gui",
+    )
+
+    registry.register(
+        name="press_keys",
+        description="Send a keyboard shortcut or key press. Use + to combine keys.",
+        parameters={
+            "keys": {
+                "type": "string",
+                "description": "Key combination (e.g., 'ctrl+s' to save, 'alt+f4' to close, 'enter' to confirm)",
+            },
+        },
+        category="gui",
+    )
+
+    registry.register(
+        name="list_windows",
+        description="List all currently open windows on the desktop with their titles.",
+        parameters={},
+        required=[],
+        category="gui",
+    )
+
+    registry.register(
+        name="focus_window",
+        description="Bring a window to the foreground by its title (partial match).",
+        parameters={
+            "window_title": {
+                "type": "string",
+                "description": "Part of the window title to find and focus",
+            },
+        },
+        category="gui",
+    )
+
+
 def create_default_registry() -> ToolRegistry:
     """Create a ToolRegistry with all default tools registered.
 
@@ -140,4 +205,5 @@ def create_default_registry() -> ToolRegistry:
     registry = ToolRegistry()
     register_file_tools(registry)
     register_system_tools(registry)
+    register_gui_tools(registry)
     return registry
