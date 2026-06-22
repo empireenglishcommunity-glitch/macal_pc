@@ -56,7 +56,7 @@ class TaskRequest(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Startup and shutdown logic for the agent daemon."""
-    global _ollama, _registry, _start_time
+    global _ollama, _registry, _engine, _start_time
 
     logger.info("MACAL Agent Daemon starting...")
     _start_time = time.time()
