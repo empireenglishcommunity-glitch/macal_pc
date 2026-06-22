@@ -1,0 +1,67 @@
+# ═══════════════════════════════════════════════════════════════
+# MACAL Agent System — Git Ignore Rules
+# ═══════════════════════════════════════════════════════════════
+
+# ─── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ─── Virtual Environment ─────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ─── Runtime Data (generated, not tracked) ───────────────────
+logs/
+data/*.db
+data/*.db-journal
+data/tmp/
+
+# ─── IDE / Editor ────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Environment & Secrets ───────────────────────────────────
+.env
+.env.local
+.env.production
+*.pem
+*.key
+
+# ─── OS Generated ────────────────────────────────────────────
+*.lnk
+ehthumbs.db
+ehthumbs_vista.db
+
+# ─── Test / Coverage ─────────────────────────────────────────
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# ─── Models (too large for git) ──────────────────────────────
+*.gguf
+*.bin
+models/
+
+# ─── Backups ─────────────────────────────────────────────────
+*.bak
+*.backup
+
+# ─── Keep empty directories via .gitkeep ─────────────────────
+!logs/.gitkeep
+!data/.gitkeep
+!data/tmp/.gitkeep

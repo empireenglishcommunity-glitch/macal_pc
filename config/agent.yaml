@@ -1,0 +1,166 @@
+# ═══════════════════════════════════════════════════════════════
+# MACAL Agent System — Master Configuration
+# ═══════════════════════════════════════════════════════════════
+# All settings for the AI Desktop Agent system.
+# Edit this file to customize behavior. Never hardcode values in source.
+# ═══════════════════════════════════════════════════════════════
+
+version: "1.0"
+project_name: "macal-agent"
+
+# ─── LLM Configuration (Ollama) ───────────────────────────────
+ollama:
+  host: "http://localhost:11434"
+  primary_model: "qwen3:8b"          # Main reasoning model (tool use, planning)
+  fast_model: "qwen3:0.8b"           # Quick classification, routing
+  vision_model: "qwen3-vl:8b"        # Screenshot analysis (Phase 8)
+  timeout_seconds: 120                # Max time to wait for LLM response
+  max_retries: 3                      # Retry on timeout/error
+  temperature: 0.3                    # Lower = more deterministic (good for agents)
+  max_tokens: 4096                    # Max output tokens per response
+
+# ─── Agent Daemon Configuration ───────────────────────────────
+agent_daemon:
+  host: "0.0.0.0"
+  port: 8900
+  workers: 1                          # Single worker (sequential task execution)
+  task_timeout_seconds: 300           # Max time per task (5 min)
+  max_queue_size: 50                  # Max queued tasks before rejecting
+  allowed_origins:
+    - "100.0.0.0/8"                   # Tailscale subnet
+    - "127.0.0.1"                     # Localhost
+
+# ─── Security Configuration ──────────────────────────────────
+security:
+  mode: "approval"                    # "auto", "approval", "staging"
+                                      #   auto = execute immediately (green/yellow)
+                                      #   approval = ask for red operations
+                                      #   staging = propose all, execute on confirm
+  allowed_write_paths:
+    - "~/Organized"
+    - "~/AgentWork"
+    - "~/Downloads"
+    - "~/Documents/Agent-Managed"
+    - "~/Desktop"
+
+  blocked_paths:
+    - "C:/Windows"
+    - "C:/Program Files"
+    - "C:/Program Files (x86)"
+    - "~/AppData"
+    - "~/.ssh"
+    - "~/.config"
+    - "C:/$Recycle.Bin"
+
+  max_files_per_operation: 100        # Safety cap for batch operations
+  max_actions_per_minute: 50          # Rate limiting
+  approval_timeout_seconds: 300       # Auto-reject after 5 min of no response
+
+  require_approval_for:
+    - "delete_file"
+    - "delete_folder"
+    - "overwrite_file"
+    - "empty_recycle_bin"
+    - "install_software"
+    - "run_admin_command"
+    - "modify_system_setting"
+
+  always_blocked:
+    - "format_drive"
+    - "modify_registry"
+    - "modify_startup"
+    - "access_credentials"
+    - "disable_firewall"
+    - "disable_antivirus"
+    - "recursive_delete"
+    - "write_to_system_directory"
+
+# ─── Hetzner Server (Orchestration) ──────────────────────────
+hetzner:
+  server_ip: "77.42.43.250"
+  tailscale_ip: ""                    # Fill after Tailscale setup (e.g., 100.x.y.z)
+  n8n_url: "https://bot.empireenglish.online"
+  agent_api_subdomain: "agent.empireenglish.online"
+
+# ─── Notifications ───────────────────────────────────────────
+notifications:
+  telegram_enabled: true
+  telegram_bot_token: ""              # Set via environment variable: MACAL_TELEGRAM_TOKEN
+  telegram_chat_id: ""                # Set via environment variable: MACAL_TELEGRAM_CHAT_ID
+  notify_on:
+    - "task_complete"
+    - "task_failed"
+    - "approval_needed"
+    - "system_error"
+    - "daily_report"
+  daily_report_time: "22:00"          # Asia/Dubai timezone
+
+# ─── File Organization ───────────────────────────────────────
+file_organizer:
+  watch_directories:
+    - "~/Downloads"
+    - "~/Desktop"
+  organize_root: "~/Organized"
+  staging_mode: true                  # Propose changes before executing
+  watch_interval_seconds: 5           # How often to check for new files
+  min_file_age_seconds: 10            # Wait for file to finish writing
+  ignore_patterns:
+    - "*.tmp"
+    - "*.crdownload"
+    - "*.part"
+    - "~$*"
+    - "Thumbs.db"
+    - "desktop.ini"
+
+  folder_template:
+    Documents:
+      - "Invoices/{year}-{month}"
+      - "Contracts/{year}"
+      - "Reports/{year}-{month}"
+      - "Personal"
+      - "Work"
+    Code:
+      - "Python"
+      - "JavaScript"
+      - "Projects"
+    Images:
+      - "Photos/{year}-{month}"
+      - "Screenshots/{year}-{month}"
+      - "Design"
+    Videos:
+      - "Recordings"
+      - "Downloads"
+    Audio:
+      - "Music"
+      - "Recordings"
+    Archives:
+      - "Compressed"
+      - "Backups"
+    Data:
+      - "Spreadsheets"
+      - "Exports"
+
+# ─── GUI Automation ──────────────────────────────────────────
+gui:
+  default_backend: "agent_desktop"    # "agent_desktop", "pywinauto", "ufo3", "ahk"
+  screenshot_on_error: true           # Capture screenshot when GUI action fails
+  action_delay_ms: 200                # Delay between GUI actions (stability)
+  ufo3_path: ""                       # Path to UFO3 installation (fill during Phase 3)
+  agent_desktop_path: ""              # Path to agent-desktop binary (fill during Phase 3)
+  ahk_path: "C:/Program Files/AutoHotkey/v2/AutoHotkey64.exe"
+
+# ─── Logging ─────────────────────────────────────────────────
+logging:
+  level: "INFO"                       # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "json"                      # "json" or "text"
+  file: "logs/agent.log"
+  max_size_mb: 50
+  rotation_days: 7
+  audit_db: "data/audit.db"           # SQLite transaction journal
+  llm_log: "logs/llm.log"            # All LLM calls (for debugging/cost tracking)
+
+# ─── Paths ───────────────────────────────────────────────────
+paths:
+  project_root: "C:/Projects/macal-agent"  # Update to your actual project path
+  ollama_models: ""                         # Leave empty for default Ollama path
+  temp_dir: "data/tmp"
