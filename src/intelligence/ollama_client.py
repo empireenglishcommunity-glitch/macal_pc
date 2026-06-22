@@ -72,7 +72,7 @@ class OllamaClient:
     def __init__(
         self,
         host: str = "http://localhost:11434",
-        model: str = "qwen3:8b",
+        model: str = "qwen3:4b",
         timeout: int = 120,
         max_retries: int = 3,
         temperature: float = 0.3,

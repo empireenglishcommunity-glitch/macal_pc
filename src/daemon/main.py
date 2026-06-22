@@ -27,6 +27,7 @@ from src.intelligence.ollama_client import OllamaClient
 from src.intelligence.tool_registry import ToolRegistry
 from src.intelligence.default_tools import create_default_registry
 from src.intelligence.prompts import agent_system_prompt
+from src.execution.engine import ExecutionEngine
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +35,7 @@ logger = logging.getLogger(__name__)
 
 _ollama: OllamaClient | None = None
 _registry: ToolRegistry | None = None
+_engine: ExecutionEngine | None = None
 _start_time: float = 0.0
 
 
@@ -59,8 +61,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("MACAL Agent Daemon starting...")
     _start_time = time.time()
 
-    # Initialize Ollama client
-    _ollama = OllamaClient()
+    # Initialize Ollama client (use OLLAMA_MODEL env var, or detect available model)
+    import os
+    model = os.environ.get("OLLAMA_MODEL", "qwen3:4b")
+    _ollama = OllamaClient(model=model)
     health = await _ollama.health_check()
     if health:
         models = await _ollama.list_models()
@@ -71,6 +75,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Initialize tool registry
     _registry = create_default_registry()
     logger.info(f"Tool registry loaded: {len(_registry)} tools registered")
+
+    # Initialize execution engine
+    _engine = ExecutionEngine()
+    logger.info("Execution engine ready")
 
     yield
 
@@ -128,21 +136,22 @@ async def list_tools() -> dict:
 
 @app.post("/api/v1/task")
 async def submit_task(request: TaskRequest) -> dict:
-    """Submit a new task for the agent to execute.
+    """Submit a task for the agent to plan AND execute.
 
-    Called by n8n workflows on Hetzner when a trigger fires.
-    Currently implements Phase 1 capability: accepts instruction,
-    asks LLM to plan tool calls, returns the plan.
-    Phase 2 will add actual execution.
+    Flow:
+    1. LLM plans which tools to call
+    2. Permission Guard checks each action
+    3. Execution Engine performs the actions
+    4. Returns results
     """
     if not request.instruction.strip():
         return {"error": "Empty instruction", "status": "rejected"}
 
-    if not _ollama or not _registry:
+    if not _ollama or not _registry or not _engine:
         return {"error": "Agent not initialized", "status": "error"}
 
-    # Phase 1: Plan only (ask LLM what tool calls to make)
     try:
+        # Step 1: Ask LLM to plan
         tools = _registry.get_tool_definitions()
         response = await _ollama.chat_with_tools(
             message=request.instruction,
@@ -150,24 +159,50 @@ async def submit_task(request: TaskRequest) -> dict:
             system_prompt=agent_system_prompt(),
         )
 
-        # Return the plan (Phase 2 will execute it)
         planned_calls = [
             {"tool": tc.name, "arguments": tc.arguments}
             for tc in response.tool_calls
         ]
 
+        if not planned_calls:
+            return {
+                "status": "no_action",
+                "instruction": request.instruction,
+                "llm_response": response.content[:500],
+                "message": "LLM did not produce any tool calls for this instruction",
+            }
+
+        # Step 2: Execute the plan
+        task_result = await _engine.execute_plan(
+            instruction=request.instruction,
+            planned_actions=planned_calls,
+        )
+
+        # Step 3: Return full result
         return {
-            "status": "planned",
+            "task_id": task_result.task_id,
+            "status": task_result.status,
             "instruction": request.instruction,
-            "planned_actions": planned_calls,
-            "llm_response": response.content[:500] if response.content else "",
-            "tokens_used": response.tokens_used,
-            "duration_ms": response.duration_ms,
-            "note": "Phase 1: planning only — execution coming in Phase 2",
+            "steps_completed": task_result.steps_completed,
+            "steps_total": task_result.steps_total,
+            "results": [
+                {
+                    "step": r.step_number,
+                    "tool": r.tool,
+                    "arguments": r.arguments,
+                    "success": r.success,
+                    "result": r.result,
+                    "error": r.error,
+                }
+                for r in task_result.results
+            ],
+            "error": task_result.error,
+            "duration_ms": task_result.duration_ms,
+            "planning_tokens": response.tokens_used,
         }
 
     except Exception as e:
-        logger.error(f"Task planning failed: {e}")
+        logger.error(f"Task execution failed: {e}")
         return {"error": str(e), "status": "failed"}
 
 
@@ -194,8 +229,10 @@ async def chat(message: str = "", system_prompt: str = "") -> dict:
 @app.post("/api/v1/rollback")
 async def rollback_task(task_id: str = "", last_n: int = 0) -> dict:
     """Rollback a previous task or the last N operations."""
-    # TODO Phase 2: Implement rollback from transaction journal
-    return {"status": "not_implemented", "message": "Rollback coming in Phase 2"}
+    if not _engine:
+        return {"error": "Engine not initialized", "status": "error"}
+    log = _engine.get_transaction_log()
+    return {"status": "ok", "transaction_count": len(log), "recent": log[-5:] if log else []}
 
 
 # ─── Main ─────────────────────────────────────────────────────
