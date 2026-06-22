@@ -1,0 +1,40 @@
+[project]
+name = "macal-agent"
+version = "0.1.0"
+description = "Professional-grade AI Desktop Agent for Windows 11 — local LLM, zero recurring cost"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.11"
+authors = [
+    {name = "MACAL Empire"},
+]
+keywords = ["ai-agent", "desktop-automation", "windows", "ollama", "local-llm"]
+
+[project.urls]
+Repository = "https://github.com/empireenglishcommunity-glitch/macal_pc"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP"]
+ignore = ["E501"]  # Line length handled by formatter
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
