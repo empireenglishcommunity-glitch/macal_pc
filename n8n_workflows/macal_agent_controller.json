@@ -1,0 +1,190 @@
+{
+  "name": "MACAL Agent Controller",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"],
+        "additionalFields": {}
+      },
+      "id": "telegram-trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [220, 300],
+      "webhookId": "macal-agent-telegram"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract message and validate sender\nconst ADMIN_CHAT_ID = '8355378781';\n\nconst msg = $input.first().json.message;\nconst chatId = String(msg.chat.id);\nconst text = msg.text || '';\nconst firstName = msg.from.first_name || 'User';\n\n// Security: only respond to admin\nif (chatId !== ADMIN_CHAT_ID) {\n  return [{ json: { _route: 'unauthorized', chatId, text } }];\n}\n\n// Parse command\nlet instruction = text;\nlet command = 'agent';\n\nif (text.startsWith('/')) {\n  const parts = text.split(' ');\n  command = parts[0].replace('/', '').toLowerCase();\n  instruction = parts.slice(1).join(' ');\n}\n\nreturn [{ json: {\n  _route: command,\n  chatId,\n  instruction,\n  firstName,\n  rawText: text\n}}];"
+      },
+      "id": "code-router",
+      "name": "Parse Command",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": false },
+                "conditions": [
+                  { "leftValue": "={{ $json._route }}", "rightValue": "unauthorized", "operator": { "type": "string", "operation": "equals" } }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Unauthorized"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false },
+                "conditions": [
+                  { "leftValue": "={{ $json._route }}", "rightValue": "status", "operator": { "type": "string", "operation": "equals" } }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Status"
+            },
+            {
+              "conditions": {
+                "options": { "caseSensitive": false },
+                "conditions": [
+                  { "leftValue": "={{ $json._route }}", "rightValue": "agent", "operator": { "type": "string", "operation": "equals" } }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "Agent Task"
+            }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      },
+      "id": "switch-route",
+      "name": "Route Command",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://100.125.244.102:8900/api/v1/task",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ instruction: $json.instruction || $json.rawText }) }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "http-agent",
+      "name": "Call PC Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 360]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://100.125.244.102:8900/api/v1/health",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "http-status",
+      "name": "Check PC Health",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format agent response for Telegram\nconst data = $input.first().json;\nlet msg = '';\n\nif (data.status === 'completed') {\n  msg = '✅ *Task Completed*\\n\\n';\n  msg += `📋 ${data.instruction}\\n\\n`;\n  if (data.results && data.results.length > 0) {\n    for (const r of data.results) {\n      const icon = r.success ? '✓' : '✗';\n      msg += `${icon} Step ${r.step}: \\`${r.tool}\\`\\n`;\n      if (r.result) msg += `  → ${r.result}\\n`;\n      if (r.error) msg += `  ⚠️ ${r.error}\\n`;\n    }\n  }\n  msg += `\\n⏱️ ${data.duration_ms}ms`;\n} else if (data.status === 'blocked') {\n  msg = '🚫 *Action Blocked*\\n\\n';\n  msg += `Reason: ${data.error}`;\n} else if (data.status === 'needs_approval') {\n  msg = '⚠️ *Approval Required*\\n\\n';\n  msg += `${data.error}\\n\\nReply /approve or /reject`;\n} else if (data.status === 'failed') {\n  msg = '❌ *Task Failed*\\n\\n';\n  msg += `Error: ${data.error}`;\n} else if (data.error) {\n  msg = '❌ *Error*\\n\\n' + data.error;\n} else {\n  msg = '🤷 Unexpected response:\\n' + JSON.stringify(data).substring(0, 500);\n}\n\nconst chatId = $('Parse Command').first().json.chatId;\nreturn [{ json: { chatId, msg } }];"
+      },
+      "id": "format-response",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1140, 360]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format health status for Telegram\nconst data = $input.first().json;\nconst status = data.status === 'healthy' ? '🟢' : '🔴';\nlet msg = `${status} *Agent Status*\\n\\n`;\nmsg += `Status: ${data.status}\\n`;\nmsg += `Uptime: ${Math.floor(data.uptime_seconds / 60)} minutes\\n`;\nmsg += `Ollama: ${data.ollama?.connected ? '✅ Connected' : '❌ Disconnected'}\\n`;\nmsg += `Models: ${data.ollama?.models?.join(', ') || 'none'}\\n`;\nmsg += `Tools: ${data.tools_registered} registered`;\n\nconst chatId = $('Parse Command').first().json.chatId;\nreturn [{ json: { chatId, msg } }];"
+      },
+      "id": "format-status",
+      "name": "Format Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1140, 200]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.msg }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "id": "telegram-reply",
+      "name": "Reply to User",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [1380, 300],
+      "credentials": {
+        "telegramApi": {
+          "id": "CREDENTIAL_ID",
+          "name": "MACAL Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "⛔ Unauthorized. This bot only responds to its admin.",
+        "additionalFields": {}
+      },
+      "id": "telegram-unauthorized",
+      "name": "Reject Unauthorized",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [900, 80],
+      "credentials": {
+        "telegramApi": {
+          "id": "CREDENTIAL_ID",
+          "name": "MACAL Bot"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [[{ "node": "Parse Command", "type": "main", "index": 0 }]]
+    },
+    "Parse Command": {
+      "main": [[{ "node": "Route Command", "type": "main", "index": 0 }]]
+    },
+    "Route Command": {
+      "main": [
+        [{ "node": "Reject Unauthorized", "type": "main", "index": 0 }],
+        [{ "node": "Check PC Health", "type": "main", "index": 0 }],
+        [{ "node": "Call PC Agent", "type": "main", "index": 0 }]
+      ]
+    },
+    "Call PC Agent": {
+      "main": [[{ "node": "Format Response", "type": "main", "index": 0 }]]
+    },
+    "Check PC Health": {
+      "main": [[{ "node": "Format Status", "type": "main", "index": 0 }]]
+    },
+    "Format Response": {
+      "main": [[{ "node": "Reply to User", "type": "main", "index": 0 }]]
+    },
+    "Format Status": {
+      "main": [[{ "node": "Reply to User", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
