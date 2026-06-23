@@ -284,6 +284,40 @@ class ExecutionEngine:
             info = f"OS={platform.system()} {platform.version()}, Python={platform.python_version()}"
             return FileOpResult(success=True, operation="get_system_status", source="system", destination=info)
 
+        # ─── Content Reading Operations ───────────────────────────
+        elif tool == "read_file_content":
+            from src.execution.content_reader import read_file_content
+            result = read_file_content(arguments.get("path", ""))
+            if result["success"]:
+                return FileOpResult(
+                    success=True, operation="read_file_content",
+                    source=arguments.get("path", ""),
+                    destination=result["content"][:500],
+                )
+            else:
+                return FileOpResult(
+                    success=False, operation="read_file_content",
+                    source=arguments.get("path", ""), error=result["error"],
+                )
+
+        elif tool == "search_in_file":
+            from src.execution.content_reader import search_in_file
+            result = search_in_file(arguments.get("path", ""), arguments.get("query", ""))
+            if result["success"]:
+                matches_str = "; ".join(
+                    f"L{m['line']}: {m['text'][:80]}" for m in result["matches"][:10]
+                )
+                return FileOpResult(
+                    success=True, operation="search_in_file",
+                    source=arguments.get("path", ""),
+                    destination=f"{result['total_matches']} matches: {matches_str}",
+                )
+            else:
+                return FileOpResult(
+                    success=False, operation="search_in_file",
+                    source=arguments.get("path", ""), error=result["error"],
+                )
+
         # ─── GUI Operations ───────────────────────────────────────
         elif tool == "open_application":
             result = await self.gui_ops.open_application(arguments.get("app_name", ""))

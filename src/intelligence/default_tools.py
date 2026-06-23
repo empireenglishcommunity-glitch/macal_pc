@@ -131,6 +131,34 @@ def register_system_tools(registry: ToolRegistry) -> None:
         category="system",
     )
 
+    registry.register(
+        name="read_file_content",
+        description="Read the text content of a file. Works with: .txt, .md, .py, .js, .json, .csv, .pdf, .docx, .xlsx. Returns the first 5000 characters.",
+        parameters={
+            "path": {
+                "type": "string",
+                "description": "Path to the file to read (e.g., '~/Documents/report.pdf')",
+            },
+        },
+        category="system",
+    )
+
+    registry.register(
+        name="search_in_file",
+        description="Search for a text string inside a file. Returns lines that contain the query.",
+        parameters={
+            "path": {
+                "type": "string",
+                "description": "Path to the file to search in",
+            },
+            "query": {
+                "type": "string",
+                "description": "Text to search for (case-insensitive)",
+            },
+        },
+        category="system",
+    )
+
 
 def register_gui_tools(registry: ToolRegistry) -> None:
     """Register GUI automation tools (Phase 3)."""
