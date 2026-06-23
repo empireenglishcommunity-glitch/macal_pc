@@ -1,23 +1,35 @@
 {
-  "batch_id": "test-001",
-  "description": "Bridge verification test — confirms the system works",
+  "batch_id": "phase-a3-001",
+  "description": "Phase A3: Install Multi-Step Fast Router — enables instant multi-step commands like 'create a project called X'",
   "commands": [
     {
       "id": 1,
-      "description": "Verify Python is working",
-      "command": "python --version",
+      "description": "Update fast_router.py with multi-step pattern support",
+      "command": "git fetch origin && git checkout origin/phase-3/gui-operations -- src/intelligence/fast_router.py",
       "risk": "green"
     },
     {
       "id": 2,
-      "description": "Verify Ollama is installed",
-      "command": "ollama --version",
+      "description": "Update daemon main.py with latest fast_route_multi integration",
+      "command": "git checkout origin/phase-3/gui-operations -- src/daemon/main.py",
       "risk": "green"
     },
     {
       "id": 3,
-      "description": "Check agent project exists",
-      "command": "dir C:\\Users\\97150\\macal_pc\\src",
+      "description": "Verify fast_router has multi-step support",
+      "command": "python -c \"from src.intelligence.fast_router import fast_route_multi; print(fast_route_multi('create a project called TestApp'))\"",
+      "risk": "green"
+    },
+    {
+      "id": 4,
+      "description": "Start the agent daemon (will run in background)",
+      "command": "start /b python -m src.daemon.main",
+      "risk": "yellow"
+    },
+    {
+      "id": 5,
+      "description": "Wait 3 seconds for agent to start, then test instant multi-step execution",
+      "command": "timeout /t 3 /nobreak >nul && curl -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"Create a project called BridgeTest in my Documents\\\"}\"",
       "risk": "green"
     }
   ]

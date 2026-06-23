@@ -28,7 +28,7 @@ from src.intelligence.tool_registry import ToolRegistry
 from src.intelligence.default_tools import create_default_registry
 from src.intelligence.prompts import agent_system_prompt
 from src.execution.engine import ExecutionEngine
-from src.intelligence.fast_router import fast_route
+from src.intelligence.fast_router import fast_route, fast_route_multi
 from src.intelligence.memory import AgentMemory
 
 logger = logging.getLogger(__name__)
@@ -206,6 +206,30 @@ async def submit_task(request: TaskRequest) -> dict:
                 "duration_ms": task_result.duration_ms,
                 "planning_tokens": 0,
                 "note": "fast-routed (no LLM)",
+            }
+
+        # SPEED: Try multi-step pattern matching (instant, no LLM needed)
+        multi_result = fast_route_multi(request.instruction)
+        if multi_result:
+            task_result = await _engine.execute_plan(
+                instruction=request.instruction,
+                planned_actions=multi_result,
+            )
+            return {
+                "task_id": task_result.task_id,
+                "status": task_result.status,
+                "instruction": request.instruction,
+                "steps_completed": task_result.steps_completed,
+                "steps_total": task_result.steps_total,
+                "results": [
+                    {"step": r.step_number, "tool": r.tool, "arguments": r.arguments,
+                     "success": r.success, "result": r.result, "error": r.error}
+                    for r in task_result.results
+                ],
+                "error": task_result.error,
+                "duration_ms": task_result.duration_ms,
+                "planning_tokens": 0,
+                "note": "fast-routed MULTI-STEP (no LLM)",
             }
 
         # Fallback: Use LLM for complex/unrecognized instructions
