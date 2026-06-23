@@ -1,23 +1,23 @@
 {
-  "batch_id": "clipboard-capture-001",
-  "description": "Install clipboard capture + test it",
+  "batch_id": "startup-organize-001",
+  "description": "Register startup organizer — runs when PC boots",
   "commands": [
     {
       "id": 1,
-      "description": "Pull clipboard capture script",
-      "command": "git fetch origin && git checkout origin/phase-3/gui-operations -- scripts/clipboard_capture.py",
+      "description": "Pull the startup script",
+      "command": "git fetch origin && git checkout origin/phase-3/gui-operations -- scripts/startup_organize.bat",
       "risk": "green"
     },
     {
       "id": 2,
-      "description": "Install required packages (pyperclip + keyboard)",
-      "command": "pip install pyperclip keyboard -q",
-      "risk": "green"
+      "description": "Register with Task Scheduler (runs on login, after agent)",
+      "command": "schtasks /create /tn \"MACAL Auto-Organize\" /tr \"C:\\Users\\97150\\macal_pc\\scripts\\startup_organize.bat\" /sc onlogon /delay 0001:00 /rl highest /f",
+      "risk": "yellow"
     },
     {
       "id": 3,
-      "description": "Quick test: manually capture current clipboard to notes",
-      "command": "python -c \"import pyperclip; from pathlib import Path; from datetime import datetime; d=Path.home()/'Documents'/'Notes'; d.mkdir(parents=True,exist_ok=True); c=pyperclip.paste(); f=open(d/'captures.md','a',encoding='utf-8'); f.write(f'\\n---\\n**Test capture: {datetime.now()}**\\n\\n{c[:100]}\\n'); f.close(); print('OK - captured to Notes/captures.md')\"",
+      "description": "Verify both tasks are registered",
+      "command": "schtasks /query /tn \"MACAL Agent\" && schtasks /query /tn \"MACAL Auto-Organize\"",
       "risk": "green"
     }
   ]
