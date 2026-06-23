@@ -1,35 +1,41 @@
 {
-  "batch_id": "patterns-upgrade-001",
-  "description": "Upgrade fast router with more patterns + test them all",
+  "batch_id": "live-test-001",
+  "description": "Live test: agent executes real tasks with new patterns (read files, search, list, create notes)",
   "commands": [
     {
       "id": 1,
-      "description": "Pull updated fast_router.py with 9 single-step + 3 multi-step patterns",
-      "command": "git fetch origin && git checkout origin/phase-3/gui-operations -- src/intelligence/fast_router.py",
-      "risk": "green"
+      "description": "Restart agent with latest code (kill old + start new)",
+      "command": "taskkill /f /im python.exe 2>nul & timeout /t 2 /nobreak >nul & start /b cmd /c \"cd C:\\Users\\97150\\macal_pc && .venv\\Scripts\\activate && python -m src.daemon.main\"",
+      "risk": "yellow"
     },
     {
       "id": 2,
-      "description": "Test: read file pattern matches",
-      "command": "python -c \"from src.intelligence.fast_router import fast_route; print(fast_route('read hello.txt in my Documents'))\"",
+      "description": "Wait for agent to start",
+      "command": "timeout /t 8 /nobreak >nul && curl -s http://localhost:8900/api/v1/health",
       "risk": "green"
     },
     {
       "id": 3,
-      "description": "Test: list directory pattern matches",
-      "command": "python -c \"from src.intelligence.fast_router import fast_route; print(fast_route('list my Downloads'))\"",
+      "description": "Test: Read the hello.txt file we created earlier",
+      "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"read hello.txt in my Documents\\\"}\"",
       "risk": "green"
     },
     {
       "id": 4,
-      "description": "Test: search in file pattern matches",
-      "command": "python -c \"from src.intelligence.fast_router import fast_route; print(fast_route('search agent in the file hello.txt'))\"",
+      "description": "Test: List files in your Organized folder",
+      "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"list my Organized\\\"}\"",
       "risk": "green"
     },
     {
       "id": 5,
-      "description": "Test: multi-step note creation",
-      "command": "python -c \"from src.intelligence.fast_router import fast_route_multi; print(fast_route_multi('create a note called ideas.md with Remember to buy RAM'))\"",
+      "description": "Test: Create a note instantly",
+      "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"create a note called daily-log.md with Today I built an AI agent that controls my PC\\\"}\"",
+      "risk": "green"
+    },
+    {
+      "id": 6,
+      "description": "Test: Read the note we just created",
+      "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"read daily-log.md in my Documents/Notes\\\"}\"",
       "risk": "green"
     }
   ]
