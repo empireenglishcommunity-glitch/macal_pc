@@ -1,125 +1,41 @@
 {
-  "batch_id": "memory-load-001",
-  "description": "Teach the agent about you — load 20 memories (preferences, facts, projects)",
+  "batch_id": "features-batch-001",
+  "description": "Install new features: Telegram commands, ROI calculator, undo. Test all.",
   "commands": [
     {
       "id": 1,
-      "description": "Store: Owner identity",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=fact&key=owner_name&value=Mahmoud+Ashri+(macal_emperor)\"",
+      "description": "Pull all updated files",
+      "command": "git fetch origin && git checkout origin/phase-3/gui-operations -- src/intelligence/fast_router.py src/daemon/main.py",
       "risk": "green"
     },
     {
       "id": 2,
-      "description": "Store: Primary business",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=fact&key=primary_business&value=Real+estate+broker+in+Dubai+UAE\"",
-      "risk": "green"
+      "description": "Kill old agent and restart with new code",
+      "command": "taskkill /f /fi \"IMAGENAME eq python.exe\" /fi \"MEMUSAGE gt 50000\" 2>nul & timeout /t 3 /nobreak >nul & start /b cmd /c \"cd C:\\Users\\97150\\macal_pc && .venv\\Scripts\\activate && python -m src.daemon.main\" & timeout /t 8 /nobreak >nul",
+      "risk": "yellow"
     },
     {
       "id": 3,
-      "description": "Store: Side business",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=fact&key=side_business&value=Empire+English+Community+-+online+English+learning+for+Arabic+speakers\"",
+      "description": "Test: /organize command (fast-routed)",
+      "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"/memory\\\"}\"",
       "risk": "green"
     },
     {
       "id": 4,
-      "description": "Store: Real estate folder path",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=preference&key=real_estate_folder&value=~/Documents/Real-Estate/{project_name}/\"",
+      "description": "Test: /undo command",
+      "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"/undo 2\\\"}\"",
       "risk": "green"
     },
     {
       "id": 5,
-      "description": "Store: Property projects - Jade Tower",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=fact&key=project_jade_tower&value=Jade+Tower+unit+1603+-+investment+property+in+Dubai\"",
+      "description": "Test: ROI calculation (creates report file)",
+      "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"calculate roi for Jade Tower bought at 1500000 rent at 8000\\\"}\"",
       "risk": "green"
     },
     {
       "id": 6,
-      "description": "Store: Property projects - ANYA",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=fact&key=project_anya&value=ANYA+Tower+-+ARIII+development+project\"",
-      "risk": "green"
-    },
-    {
-      "id": 7,
-      "description": "Store: Organized folder structure",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=preference&key=organized_folder&value=~/Organized/+with+subfolders:+Documents,+Images,+Videos,+Archives,+Code,+Other\"",
-      "risk": "green"
-    },
-    {
-      "id": 8,
-      "description": "Store: File naming convention",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=preference&key=naming_convention&value=Use+YYYY-MM-DD+prefix+for+dated+files.+Use+descriptive+names+in+English.\"",
-      "risk": "green"
-    },
-    {
-      "id": 9,
-      "description": "Store: Notes location",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=preference&key=notes_folder&value=~/Documents/Notes/+for+quick+notes+and+logs\"",
-      "risk": "green"
-    },
-    {
-      "id": 10,
-      "description": "Store: Downloads handling",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=preference&key=downloads_handling&value=New+downloads+should+be+auto-organized+into+~/Organized/+by+category\"",
-      "risk": "green"
-    },
-    {
-      "id": 11,
-      "description": "Store: Server info",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=fact&key=hetzner_server&value=empire-n8n+at+77.42.43.250+(Tailscale:+100.81.22.6)+running+n8n+and+Cloudflare+Tunnel\"",
-      "risk": "green"
-    },
-    {
-      "id": 12,
-      "description": "Store: Telegram bot",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=fact&key=telegram_bot&value=MACAL+Agent+bot+for+remote+PC+control.+Chat+ID:+8355378781\"",
-      "risk": "green"
-    },
-    {
-      "id": 13,
-      "description": "Store: Timezone preference",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=preference&key=timezone&value=Asia/Dubai+(GMT+4)\"",
-      "risk": "green"
-    },
-    {
-      "id": 14,
-      "description": "Store: Language preference",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=preference&key=language&value=English+for+file+names+and+system.+Arabic+(Egyptian+dialect)+for+customer+content.\"",
-      "risk": "green"
-    },
-    {
-      "id": 15,
-      "description": "Store: Excluded folders (privacy)",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=preference&key=excluded_folders&value=Never+access:+AppData,+.ssh,+browser+passwords,+personal+photos+unless+explicitly+asked\"",
-      "risk": "green"
-    },
-    {
-      "id": 16,
-      "description": "Store: Automation preference",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=preference&key=automation_level&value=Maximum+automation.+Auto-execute+file+ops.+Only+ask+before+deleting+or+system+changes.\"",
-      "risk": "green"
-    },
-    {
-      "id": 17,
-      "description": "Store: Work hours",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=fact&key=work_schedule&value=Active+mostly+evenings+and+nights+(Dubai+time).+Schedule+automations+for+2-3+AM.\"",
-      "risk": "green"
-    },
-    {
-      "id": 18,
-      "description": "Store: Brand identity",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=fact&key=brand_identity&value=MACAL+Empire+-+gold+on+black+design.+Voice:+authoritative+and+professional.\"",
-      "risk": "green"
-    },
-    {
-      "id": 19,
-      "description": "Store: Hardware info",
-      "command": "curl -s -X POST \"http://localhost:8900/api/v1/memory/remember?category=fact&key=hardware&value=8GB+RAM,+Intel+Iris+Xe,+Windows+11+25H2.+Use+qwen3:4b+model.+CPU-only+inference.\"",
-      "risk": "green"
-    },
-    {
-      "id": 20,
-      "description": "Verify: show final memory stats",
-      "command": "curl -s http://localhost:8900/api/v1/memory/stats",
+      "description": "Verify ROI report was created",
+      "command": "type C:\\Users\\97150\\Documents\\Real-Estate\\Jade Tower\\Financials\\ROI_Report.md",
       "risk": "green"
     }
   ]

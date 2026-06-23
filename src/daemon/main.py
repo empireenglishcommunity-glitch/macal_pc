@@ -185,6 +185,47 @@ async def submit_task(request: TaskRequest) -> dict:
                     "planning_tokens": 0,
                     "note": "fast-routed (no LLM)",
                 }
+            elif tool == "SPECIAL_UNDO":
+                import subprocess
+                count = arguments.get("count", "5")
+                result = subprocess.run(
+                    ["python", "scripts/organize_downloads.py", "undo", str(count)],
+                    capture_output=True, text=True,
+                    cwd="C:/Users/97150/macal_pc"
+                )
+                return {
+                    "task_id": "fast",
+                    "status": "completed",
+                    "instruction": request.instruction,
+                    "steps_completed": 1,
+                    "steps_total": 1,
+                    "results": [{"step": 1, "tool": "undo", "arguments": {"count": count},
+                                 "success": result.returncode == 0,
+                                 "result": result.stdout[-300:] if result.stdout else "nothing to undo",
+                                 "error": result.stderr[-200:] if result.stderr else ""}],
+                    "error": "",
+                    "duration_ms": 0,
+                    "planning_tokens": 0,
+                    "note": "fast-routed (no LLM)",
+                }
+            elif tool == "SPECIAL_MEMORY":
+                stats = _memory.get_stats() if _memory else {}
+                recent = _memory.get_recent_tasks(5) if _memory else []
+                return {
+                    "task_id": "fast",
+                    "status": "completed",
+                    "instruction": request.instruction,
+                    "steps_completed": 1,
+                    "steps_total": 1,
+                    "results": [{"step": 1, "tool": "memory_stats", "arguments": {},
+                                 "success": True,
+                                 "result": f"Memories: {stats.get('total_memories', 0)}, Tasks logged: {stats.get('tasks_logged', 0)}, Categories: {stats.get('categories', {})}",
+                                 "error": ""}],
+                    "error": "",
+                    "duration_ms": 0,
+                    "planning_tokens": 0,
+                    "note": "fast-routed (no LLM)",
+                }
             # Execute the fast-routed tool call
             planned_calls = [{"tool": tool, "arguments": arguments}]
             task_result = await _engine.execute_plan(
