@@ -256,6 +256,12 @@ class ExecutionEngine:
                 destination=json.dumps(entries[:20]),  # Cap at 20 entries in result
             )
 
+        elif tool == "write_file":
+            return await self.file_ops.write_file(
+                path=arguments.get("path", ""),
+                content=arguments.get("content", ""),
+            )
+
         elif tool == "copy_file":
             src = arguments.get("source", "")
             dst = arguments.get("destination", "")
