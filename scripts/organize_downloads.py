@@ -116,6 +116,10 @@ def organize_file(filepath, conn):
 
     print("  Classifying: " + filepath.name)
     category, subcategory = classify_file(filepath)
+    # Validate category - if LLM returned garbage, fall back to extension
+    valid_categories = ["Documents", "Code", "Images", "Videos", "Audio", "Archives", "Data", "Other"]
+    if category not in valid_categories:
+        category, subcategory = guess_by_extension(filepath.suffix.lower())
     month = datetime.now().strftime("%Y-%m")
     dest_dir = ORGANIZE_ROOT / category / month
     dest_dir.mkdir(parents=True, exist_ok=True)
