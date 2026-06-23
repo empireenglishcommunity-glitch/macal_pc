@@ -1,29 +1,35 @@
 {
-  "batch_id": "web-research-001",
-  "description": "Phase B1: Install web research + test live search",
+  "batch_id": "real-estate-patterns-001",
+  "description": "Add real estate patterns + test property folder creation",
   "commands": [
     {
       "id": 1,
-      "description": "Pull all updated files (web_operations, engine, tools, fast_router)",
-      "command": "git fetch origin && git checkout origin/phase-3/gui-operations -- src/execution/web_operations.py src/execution/engine.py src/intelligence/default_tools.py src/intelligence/fast_router.py",
+      "description": "Pull updated fast_router with real estate patterns",
+      "command": "git fetch origin && git checkout origin/phase-3/gui-operations -- src/intelligence/fast_router.py",
       "risk": "green"
     },
     {
       "id": 2,
-      "description": "Kill old agent and restart with new code",
-      "command": "taskkill /f /fi \"WINDOWTITLE eq *daemon*\" 2>nul & taskkill /f /fi \"IMAGENAME eq python.exe\" /fi \"MEMUSAGE gt 50000\" 2>nul & echo Agent processes cleared",
-      "risk": "yellow"
+      "description": "Test: property scaffold pattern matches",
+      "command": "python -c \"from src.intelligence.fast_router import fast_route_multi; import json; r=fast_route_multi('create a property folder for Jade Tower 1603'); print(json.dumps(r,indent=2)[:600])\"",
+      "risk": "green"
     },
     {
       "id": 3,
-      "description": "Verify web_operations module loads",
-      "command": "python -c \"from src.execution.web_operations import web_search, fetch_url; print('OK - web module loaded')\"",
+      "description": "Test: execute property scaffold via agent (creates 7 folders + README)",
+      "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"create a property folder for Jade Tower 1603\\\"}\"",
       "risk": "green"
     },
     {
       "id": 4,
-      "description": "Test web search directly (no agent needed)",
-      "command": "python -c \"from src.execution.web_operations import web_search; import json; r = web_search('Dubai real estate 2026'); print(json.dumps(r, indent=2)[:500])\"",
+      "description": "Test: web search via agent",
+      "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"search the web for Dubai property market trends\\\"}\"",
+      "risk": "green"
+    },
+    {
+      "id": 5,
+      "description": "Verify property folder was created",
+      "command": "dir C:\\Users\\97150\\Documents\\Real-Estate\\Jade Tower 1603",
       "risk": "green"
     }
   ]

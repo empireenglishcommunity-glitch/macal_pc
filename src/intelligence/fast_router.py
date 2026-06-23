@@ -49,6 +49,10 @@ MULTI_STEP_PATTERNS = [
      lambda m: [
          {"tool": "write_file", "arguments": {"path": "~/" + m.group(2).strip() + "/" + m.group(1).strip(), "content": m.group(3).strip()}},
      ]),
+
+    # Real Estate: Create property folder structure
+    (r"(?:create|make|set up|setup)\s+(?:a\s+)?(?:property|real estate|project)\s+(?:folder\s+)?(?:for|called|named)\s+(.+)",
+     lambda m: _property_scaffold(m.group(1).strip())),
 ]
 
 
@@ -62,6 +66,21 @@ def _project_scaffold(name, location):
         {"tool": "create_folder", "arguments": {"path": base + "/tests"}},
         {"tool": "create_folder", "arguments": {"path": base + "/data"}},
         {"tool": "write_file", "arguments": {"path": base + "/README.md", "content": "# " + name + "\n\nProject created by MACAL Agent.\n"}},
+    ]
+
+
+def _property_scaffold(name):
+    """Generate folder structure for a real estate property/project."""
+    base = "~/Documents/Real-Estate/" + name
+    return [
+        {"tool": "create_folder", "arguments": {"path": base}},
+        {"tool": "create_folder", "arguments": {"path": base + "/Contracts"}},
+        {"tool": "create_folder", "arguments": {"path": base + "/Floor-Plans"}},
+        {"tool": "create_folder", "arguments": {"path": base + "/Client-Documents"}},
+        {"tool": "create_folder", "arguments": {"path": base + "/Photos"}},
+        {"tool": "create_folder", "arguments": {"path": base + "/Financials"}},
+        {"tool": "create_folder", "arguments": {"path": base + "/Marketing"}},
+        {"tool": "write_file", "arguments": {"path": base + "/README.md", "content": "# " + name + "\n\nProperty project folder.\nCreated by MACAL Agent.\n\n## Checklist\n- [ ] Contract signed\n- [ ] Floor plan received\n- [ ] Client documents collected\n- [ ] Photos taken\n- [ ] Financial analysis done\n"}},
     ]
 
 
