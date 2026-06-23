@@ -1,0 +1,24 @@
+{
+  "batch_id": "test-001",
+  "description": "Bridge verification test — confirms the system works",
+  "commands": [
+    {
+      "id": 1,
+      "description": "Verify Python is working",
+      "command": "python --version",
+      "risk": "green"
+    },
+    {
+      "id": 2,
+      "description": "Verify Ollama is installed",
+      "command": "ollama --version",
+      "risk": "green"
+    },
+    {
+      "id": 3,
+      "description": "Check agent project exists",
+      "command": "dir C:\\Users\\97150\\macal_pc\\src",
+      "risk": "green"
+    }
+  ]
+}
