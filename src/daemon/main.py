@@ -28,6 +28,7 @@ from src.intelligence.tool_registry import ToolRegistry
 from src.intelligence.default_tools import create_default_registry
 from src.intelligence.prompts import agent_system_prompt
 from src.execution.engine import ExecutionEngine
+from src.intelligence.fast_router import fast_route
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +152,56 @@ async def submit_task(request: TaskRequest) -> dict:
         return {"error": "Agent not initialized", "status": "error"}
 
     try:
-        # Step 1: Ask LLM to plan
+        # SPEED: Try fast pattern matching first (instant, no LLM needed)
+        fast_result = fast_route(request.instruction)
+        if fast_result:
+            tool, arguments = fast_result
+            if tool == "SPECIAL_ORGANIZE":
+                import subprocess
+                result = subprocess.run(
+                    ["python", "scripts/organize_downloads.py"],
+                    capture_output=True, text=True,
+                    cwd="C:/Users/97150/macal_pc"
+                )
+                return {
+                    "task_id": "fast",
+                    "status": "completed",
+                    "instruction": request.instruction,
+                    "steps_completed": 1,
+                    "steps_total": 1,
+                    "results": [{"step": 1, "tool": "organize_downloads", "arguments": {},
+                                 "success": result.returncode == 0,
+                                 "result": result.stdout[-300:] if result.stdout else "done",
+                                 "error": result.stderr[-200:] if result.stderr else ""}],
+                    "error": "",
+                    "duration_ms": 0,
+                    "planning_tokens": 0,
+                    "note": "fast-routed (no LLM)",
+                }
+            # Execute the fast-routed tool call
+            planned_calls = [{"tool": tool, "arguments": arguments}]
+            task_result = await _engine.execute_plan(
+                instruction=request.instruction,
+                planned_actions=planned_calls,
+            )
+            return {
+                "task_id": task_result.task_id,
+                "status": task_result.status,
+                "instruction": request.instruction,
+                "steps_completed": task_result.steps_completed,
+                "steps_total": task_result.steps_total,
+                "results": [
+                    {"step": r.step_number, "tool": r.tool, "arguments": r.arguments,
+                     "success": r.success, "result": r.result, "error": r.error}
+                    for r in task_result.results
+                ],
+                "error": task_result.error,
+                "duration_ms": task_result.duration_ms,
+                "planning_tokens": 0,
+                "note": "fast-routed (no LLM)",
+            }
+
+        # Fallback: Use LLM for complex/unrecognized instructions
         tools = _registry.get_tool_definitions()
         response = await _ollama.chat_with_tools(
             message=request.instruction,
