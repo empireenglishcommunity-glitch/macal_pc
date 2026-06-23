@@ -1,35 +1,35 @@
 {
-  "batch_id": "phase-a3-001",
-  "description": "Phase A3: Install Multi-Step Fast Router — enables instant multi-step commands like 'create a project called X'",
+  "batch_id": "patterns-upgrade-001",
+  "description": "Upgrade fast router with more patterns + test them all",
   "commands": [
     {
       "id": 1,
-      "description": "Update fast_router.py with multi-step pattern support",
+      "description": "Pull updated fast_router.py with 9 single-step + 3 multi-step patterns",
       "command": "git fetch origin && git checkout origin/phase-3/gui-operations -- src/intelligence/fast_router.py",
       "risk": "green"
     },
     {
       "id": 2,
-      "description": "Update daemon main.py with latest fast_route_multi integration",
-      "command": "git checkout origin/phase-3/gui-operations -- src/daemon/main.py",
+      "description": "Test: read file pattern matches",
+      "command": "python -c \"from src.intelligence.fast_router import fast_route; print(fast_route('read hello.txt in my Documents'))\"",
       "risk": "green"
     },
     {
       "id": 3,
-      "description": "Verify fast_router has multi-step support",
-      "command": "python -c \"from src.intelligence.fast_router import fast_route_multi; print(fast_route_multi('create a project called TestApp'))\"",
+      "description": "Test: list directory pattern matches",
+      "command": "python -c \"from src.intelligence.fast_router import fast_route; print(fast_route('list my Downloads'))\"",
       "risk": "green"
     },
     {
       "id": 4,
-      "description": "Start the agent daemon (will run in background)",
-      "command": "start /b python -m src.daemon.main",
-      "risk": "yellow"
+      "description": "Test: search in file pattern matches",
+      "command": "python -c \"from src.intelligence.fast_router import fast_route; print(fast_route('search agent in the file hello.txt'))\"",
+      "risk": "green"
     },
     {
       "id": 5,
-      "description": "Wait 3 seconds for agent to start, then test instant multi-step execution",
-      "command": "timeout /t 3 /nobreak >nul && curl -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"Create a project called BridgeTest in my Documents\\\"}\"",
+      "description": "Test: multi-step note creation",
+      "command": "python -c \"from src.intelligence.fast_router import fast_route_multi; print(fast_route_multi('create a note called ideas.md with Remember to buy RAM'))\"",
       "risk": "green"
     }
   ]

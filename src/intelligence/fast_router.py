@@ -17,6 +17,14 @@ PATTERNS = [
      "SPECIAL_ORGANIZE", lambda m: {}),
     (r"(?:status|health|system status)",
      "get_system_status", lambda m: {}),
+    (r"(?:read|show|display|cat|print)\s+(?:the\s+)?(?:file\s+)?(.+?\.\w+)(?:\s+(?:in|from)\s+(?:my\s+)?(.+))?$",
+     "read_file_content", lambda m: {"path": ("~/" + m.group(2).strip() + "/" if m.group(2) else "") + m.group(1).strip()}),
+    (r"(?:search|find|look for|grep)\s+[\"']?(.+?)[\"']?\s+(?:in|inside|within)\s+(?:the\s+)?(?:file\s+)?(.+?\.\w+)",
+     "search_in_file", lambda m: {"path": m.group(2).strip(), "query": m.group(1).strip()}),
+    (r"(?:list|show|what.s in|what is in)\s+(?:the\s+)?(?:files\s+in\s+)?(?:my\s+)?(.+?)(?:\s+folder)?$",
+     "list_directory", lambda m: {"path": "~/" + m.group(1).strip()}),
+    (r"(?:write|save)\s+[\"'](.+?)['\"]\s+(?:to|into)\s+(?:a\s+)?(?:file\s+)?(?:called\s+|named\s+)?(.+)",
+     "write_file", lambda m: {"path": m.group(2).strip(), "content": m.group(1).strip()}),
 ]
 
 
