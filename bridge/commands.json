@@ -1,35 +1,35 @@
 {
-  "batch_id": "real-estate-patterns-001",
-  "description": "Add real estate patterns + test property folder creation",
+  "batch_id": "telegram-fix-and-web-001",
+  "description": "Test Telegram bot + web search + Tailscale connectivity (home network)",
   "commands": [
     {
       "id": 1,
-      "description": "Pull updated fast_router with real estate patterns",
-      "command": "git fetch origin && git checkout origin/phase-3/gui-operations -- src/intelligence/fast_router.py",
+      "description": "Verify Tailscale is connected to Hetzner",
+      "command": "tailscale ping 100.81.22.6 -c 1",
       "risk": "green"
     },
     {
       "id": 2,
-      "description": "Test: property scaffold pattern matches",
-      "command": "python -c \"from src.intelligence.fast_router import fast_route_multi; import json; r=fast_route_multi('create a property folder for Jade Tower 1603'); print(json.dumps(r,indent=2)[:600])\"",
+      "description": "Verify n8n is accessible from your PC via Tailscale",
+      "command": "curl -s -o nul -w \"HTTP Status: %%{http_code}\" http://100.81.22.6:5678/",
       "risk": "green"
     },
     {
       "id": 3,
-      "description": "Test: execute property scaffold via agent (creates 7 folders + README)",
-      "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"create a property folder for Jade Tower 1603\\\"}\"",
-      "risk": "green"
-    },
-    {
-      "id": 4,
-      "description": "Test: web search via agent",
+      "description": "Test web search through the running agent",
       "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"search the web for Dubai property market trends\\\"}\"",
       "risk": "green"
     },
     {
+      "id": 4,
+      "description": "Test fetch_url through the agent (read a real webpage)",
+      "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"fetch https://en.wikipedia.org/wiki/Dubai\\\"}\"",
+      "risk": "green"
+    },
+    {
       "id": 5,
-      "description": "Verify property folder was created",
-      "command": "dir C:\\Users\\97150\\Documents\\Real-Estate\\Jade Tower 1603",
+      "description": "Send a test message to yourself via Telegram bot directly",
+      "command": "curl -s \"https://api.telegram.org/bot8621184851:AAEgCGHMGYpWQtDevwdm2kHt6OF3sZdlVkQ/sendMessage?chat_id=8355378781&text=MACAL+Agent+online.+All+systems+operational.\"",
       "risk": "green"
     }
   ]
