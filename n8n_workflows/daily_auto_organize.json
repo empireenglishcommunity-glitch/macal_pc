@@ -1,0 +1,65 @@
+{
+  "name": "Daily Auto-Organize",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 2 * * *"
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Every Day 2AM",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://100.125.244.102:8900/api/v1/task",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"instruction\": \"/organize\"}",
+        "options": {
+          "timeout": 600000
+        }
+      },
+      "id": "call-organize",
+      "name": "Run File Organizer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/bot8621184851:AAEgCGHMGYpWQtDevwdm2kHt6OF3sZdlVkQ/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"chat_id\": \"8355378781\", \"text\": \"🗂️ Daily Organize Complete\\nStatus: \" + $json.status + \"\\nFiles processed: check ~/Organized/\"}",
+        "options": {}
+      },
+      "id": "notify-telegram",
+      "name": "Notify via Telegram",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 300]
+    }
+  ],
+  "connections": {
+    "Every Day 2AM": {
+      "main": [[{"node": "Run File Organizer", "type": "main", "index": 0}]]
+    },
+    "Run File Organizer": {
+      "main": [[{"node": "Notify via Telegram", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
