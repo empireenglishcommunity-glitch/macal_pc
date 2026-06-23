@@ -29,6 +29,7 @@ from src.intelligence.default_tools import create_default_registry
 from src.intelligence.prompts import agent_system_prompt
 from src.execution.engine import ExecutionEngine
 from src.intelligence.fast_router import fast_route
+from src.intelligence.memory import AgentMemory
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ logger = logging.getLogger(__name__)
 _ollama: OllamaClient | None = None
 _registry: ToolRegistry | None = None
 _engine: ExecutionEngine | None = None
+_memory: AgentMemory | None = None
 _start_time: float = 0.0
 
 
@@ -57,7 +59,7 @@ class TaskRequest(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Startup and shutdown logic for the agent daemon."""
-    global _ollama, _registry, _engine, _start_time
+    global _ollama, _registry, _engine, _memory, _start_time
 
     logger.info("MACAL Agent Daemon starting...")
     _start_time = time.time()
@@ -80,6 +82,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Initialize execution engine
     _engine = ExecutionEngine()
     logger.info("Execution engine ready")
+
+    # Initialize memory system
+    _memory = AgentMemory()
+    stats = _memory.get_stats()
+    logger.info(f"Memory loaded: {stats['total_memories']} memories, {stats['tasks_logged']} tasks logged")
 
     yield
 
@@ -203,10 +210,17 @@ async def submit_task(request: TaskRequest) -> dict:
 
         # Fallback: Use LLM for complex/unrecognized instructions
         tools = _registry.get_tool_definitions()
+
+        # Inject memory context into system prompt
+        memory_context = _memory.get_context_for_prompt() if _memory else ""
+        system = agent_system_prompt()
+        if memory_context:
+            system = system + "\n\nCONTEXT FROM MEMORY:\n" + memory_context
+
         response = await _ollama.chat_with_tools(
             message=request.instruction,
             tools=tools,
-            system_prompt=agent_system_prompt(),
+            system_prompt=system,
         )
 
         planned_calls = [
@@ -283,6 +297,38 @@ async def rollback_task(task_id: str = "", last_n: int = 0) -> dict:
         return {"error": "Engine not initialized", "status": "error"}
     log = _engine.get_transaction_log()
     return {"status": "ok", "transaction_count": len(log), "recent": log[-5:] if log else []}
+
+
+@app.post("/api/v1/memory/remember")
+async def remember(category: str = "", key: str = "", value: str = "") -> dict:
+    """Store a memory (preference, fact, or correction)."""
+    if not _memory or not category or not key or not value:
+        return {"error": "category, key, and value are required"}
+    _memory.remember(category, key, value)
+    return {"status": "stored", "category": category, "key": key}
+
+
+@app.get("/api/v1/memory/recall")
+async def recall(category: str = "", key: str = "", query: str = "") -> dict:
+    """Recall memories by category, key, or search query."""
+    if not _memory:
+        return {"error": "Memory not initialized"}
+    if query:
+        return {"results": _memory.search(query)}
+    if category and key:
+        value = _memory.recall(category, key)
+        return {"value": value} if value else {"error": "Not found"}
+    if category:
+        return {"results": _memory.recall_category(category)}
+    return {"stats": _memory.get_stats()}
+
+
+@app.get("/api/v1/memory/stats")
+async def memory_stats() -> dict:
+    """Get memory system statistics."""
+    if not _memory:
+        return {"error": "Memory not initialized"}
+    return _memory.get_stats()
 
 
 # ─── Main ─────────────────────────────────────────────────────
