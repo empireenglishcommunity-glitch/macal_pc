@@ -368,6 +368,41 @@ class ExecutionEngine:
                 destination=result.details, error=result.error,
             )
 
+        # ─── Web Operations ───────────────────────────────────────
+        elif tool == "web_search":
+            from src.execution.web_operations import web_search
+            result = web_search(arguments.get("query", ""))
+            if result["success"]:
+                summary = "; ".join(
+                    r.get("title", "")[:50] + ": " + r.get("snippet", "")[:100]
+                    for r in result.get("results", [])[:3]
+                )
+                return FileOpResult(
+                    success=True, operation="web_search",
+                    source=arguments.get("query", ""),
+                    destination=summary[:500] if summary else "No results found",
+                )
+            else:
+                return FileOpResult(
+                    success=False, operation="web_search",
+                    source=arguments.get("query", ""), error=result.get("error", ""),
+                )
+
+        elif tool == "fetch_url":
+            from src.execution.web_operations import fetch_url
+            result = fetch_url(arguments.get("url", ""))
+            if result["success"]:
+                return FileOpResult(
+                    success=True, operation="fetch_url",
+                    source=arguments.get("url", ""),
+                    destination=result.get("content", "")[:500],
+                )
+            else:
+                return FileOpResult(
+                    success=False, operation="fetch_url",
+                    source=arguments.get("url", ""), error=result.get("error", ""),
+                )
+
         else:
             return FileOpResult(
                 success=False, operation=tool, source="",

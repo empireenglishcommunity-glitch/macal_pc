@@ -25,6 +25,10 @@ PATTERNS = [
      "list_directory", lambda m: {"path": "~/" + m.group(1).strip()}),
     (r"(?:write|save)\s+[\"'](.+?)['\"]\s+(?:to|into)\s+(?:a\s+)?(?:file\s+)?(?:called\s+|named\s+)?(.+)",
      "write_file", lambda m: {"path": m.group(2).strip(), "content": m.group(1).strip()}),
+    (r"(?:search|google|look up|find online|search the web for|search for)\s+(.+)",
+     "web_search", lambda m: {"query": m.group(1).strip()}),
+    (r"(?:fetch|get|open url|read url|read page)\s+(https?://\S+)",
+     "fetch_url", lambda m: {"url": m.group(1).strip()}),
 ]
 
 

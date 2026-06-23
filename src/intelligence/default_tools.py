@@ -164,6 +164,30 @@ def register_gui_tools(registry: ToolRegistry) -> None:
     """Register GUI automation tools (Phase 3)."""
 
     registry.register(
+        name="web_search",
+        description="Search the internet for information. Returns top results with titles and snippets.",
+        parameters={
+            "query": {
+                "type": "string",
+                "description": "Search query (e.g., 'Dubai real estate prices 2026')",
+            },
+        },
+        category="web",
+    )
+
+    registry.register(
+        name="fetch_url",
+        description="Fetch a web page and extract its text content. Use for reading articles, documentation, or any URL.",
+        parameters={
+            "url": {
+                "type": "string",
+                "description": "URL to fetch (e.g., 'https://example.com/article')",
+            },
+        },
+        category="web",
+    )
+
+    registry.register(
         name="open_application",
         description="Open a Windows application. Supports: notepad, calculator, explorer, chrome, edge, settings, paint, cmd, powershell, or any executable name.",
         parameters={

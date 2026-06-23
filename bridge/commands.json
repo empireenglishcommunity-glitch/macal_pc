@@ -1,41 +1,29 @@
 {
-  "batch_id": "live-test-001",
-  "description": "Live test: agent executes real tasks with new patterns (read files, search, list, create notes)",
+  "batch_id": "web-research-001",
+  "description": "Phase B1: Install web research + test live search",
   "commands": [
     {
       "id": 1,
-      "description": "Restart agent with latest code (kill old + start new)",
-      "command": "taskkill /f /im python.exe 2>nul & timeout /t 2 /nobreak >nul & start /b cmd /c \"cd C:\\Users\\97150\\macal_pc && .venv\\Scripts\\activate && python -m src.daemon.main\"",
-      "risk": "yellow"
-    },
-    {
-      "id": 2,
-      "description": "Wait for agent to start",
-      "command": "timeout /t 8 /nobreak >nul && curl -s http://localhost:8900/api/v1/health",
+      "description": "Pull all updated files (web_operations, engine, tools, fast_router)",
+      "command": "git fetch origin && git checkout origin/phase-3/gui-operations -- src/execution/web_operations.py src/execution/engine.py src/intelligence/default_tools.py src/intelligence/fast_router.py",
       "risk": "green"
     },
     {
+      "id": 2,
+      "description": "Kill old agent and restart with new code",
+      "command": "taskkill /f /fi \"WINDOWTITLE eq *daemon*\" 2>nul & taskkill /f /fi \"IMAGENAME eq python.exe\" /fi \"MEMUSAGE gt 50000\" 2>nul & echo Agent processes cleared",
+      "risk": "yellow"
+    },
+    {
       "id": 3,
-      "description": "Test: Read the hello.txt file we created earlier",
-      "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"read hello.txt in my Documents\\\"}\"",
+      "description": "Verify web_operations module loads",
+      "command": "python -c \"from src.execution.web_operations import web_search, fetch_url; print('OK - web module loaded')\"",
       "risk": "green"
     },
     {
       "id": 4,
-      "description": "Test: List files in your Organized folder",
-      "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"list my Organized\\\"}\"",
-      "risk": "green"
-    },
-    {
-      "id": 5,
-      "description": "Test: Create a note instantly",
-      "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"create a note called daily-log.md with Today I built an AI agent that controls my PC\\\"}\"",
-      "risk": "green"
-    },
-    {
-      "id": 6,
-      "description": "Test: Read the note we just created",
-      "command": "curl -s -X POST http://localhost:8900/api/v1/task -H \"Content-Type: application/json\" -d \"{\\\"instruction\\\": \\\"read daily-log.md in my Documents/Notes\\\"}\"",
+      "description": "Test web search directly (no agent needed)",
+      "command": "python -c \"from src.execution.web_operations import web_search; import json; r = web_search('Dubai real estate 2026'); print(json.dumps(r, indent=2)[:500])\"",
       "risk": "green"
     }
   ]
