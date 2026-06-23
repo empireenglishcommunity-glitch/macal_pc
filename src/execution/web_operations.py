@@ -62,36 +62,25 @@ def web_search(query: str, max_results: int = 5) -> dict:
 
 
 def _search_html_fallback(query: str, max_results: int = 5) -> list:
-    """Fallback: use public SearXNG instances for broad web search."""
-    # List of public SearXNG instances with JSON API
-    instances = [
-        "https://search.sapti.me",
-        "https://searx.tiekoetter.com",
-        "https://search.bus-hit.me",
-        "https://searx.be",
-    ]
+    """Fallback: use Wikipedia API for broad knowledge search."""
+    try:
+        encoded = urllib.parse.quote_plus(query)
+        url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={encoded}&format=json&srlimit={max_results}"
+        req = urllib.request.Request(url, headers={"User-Agent": "MACAL-Agent/1.0 (Desktop Assistant)"})
+        with urllib.request.urlopen(req, timeout=10) as response:
+            data = json.loads(response.read().decode("utf-8"))
 
-    for instance in instances:
-        try:
-            encoded = urllib.parse.quote_plus(query)
-            url = f"{instance}/search?q={encoded}&format=json&categories=general"
-            req = urllib.request.Request(url, headers={"User-Agent": "MACAL-Agent/1.0"})
-            with urllib.request.urlopen(req, timeout=10) as response:
-                data = json.loads(response.read().decode("utf-8"))
-
-            results = []
-            for item in data.get("results", [])[:max_results]:
-                results.append({
-                    "title": item.get("title", "")[:100],
-                    "snippet": item.get("content", "")[:300],
-                    "url": item.get("url", ""),
-                })
-            if results:
-                return results
-        except Exception:
-            continue
-
-    return []
+        results = []
+        for item in data.get("query", {}).get("search", []):
+            snippet = re.sub(r'<[^>]+>', '', item.get("snippet", ""))
+            results.append({
+                "title": item.get("title", ""),
+                "snippet": snippet[:300],
+                "url": "https://en.wikipedia.org/wiki/" + urllib.parse.quote(item.get("title", "").replace(" ", "_")),
+            })
+        return results
+    except Exception:
+        return []
 
 
 def fetch_url(url: str, max_chars: int = 5000) -> dict:
